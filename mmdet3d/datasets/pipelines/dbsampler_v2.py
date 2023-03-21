@@ -239,10 +239,10 @@ class DataBaseSampler_v2(object):
             ds_scale: float for x,y-coordinates multiplication
         """
         # pts_kept_factor = 1/(5*ds_scale)
-        # num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
+        num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
         # [ 4.35836897e-01 -3.67409854e+01  6.95919053e+02]
         # num_pts_kept = int(pcd.shape[0]*(-1.88322669*1e-2*dss**3 + 2.53214753*1e0*dss**2 - 1.02129840*1e2*dss + 1.23150913*1e3)) # 3rd grade polyfit of pedestrian
-        num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
+        # num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
         ind = torch.randperm(pcd.shape[0])[:num_pts_kept]
         pcd = pcd[ind]
         return pcd
