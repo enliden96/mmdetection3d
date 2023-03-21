@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .compose import Compose
 from .dbsampler import DataBaseSampler
+from .dbsampler_v2 import DataBaseSampler_v2
 from .formating import Collect3D, DefaultFormatBundle, DefaultFormatBundle3D
 from .loading import (LoadAnnotations3D, LoadImageFromFileMono3D,
                       LoadMultiViewImageFromFiles, LoadPointsFromDict,
@@ -22,7 +23,7 @@ __all__ = [
     'ObjectSample', 'RandomFlip3D', 'ObjectNoise', 'GlobalRotScaleTrans',
     'PointShuffle', 'ObjectRangeFilter', 'PointsRangeFilter', 'Collect3D',
     'Compose', 'LoadMultiViewImageFromFiles', 'LoadPointsFromFile',
-    'DefaultFormatBundle', 'DefaultFormatBundle3D', 'DataBaseSampler',
+    'DefaultFormatBundle', 'DefaultFormatBundle3D', 'DataBaseSampler', 'DataBaseSampler_v2',
     'NormalizePointsColor', 'LoadAnnotations3D', 'IndoorPointSample',
     'PointSample', 'PointSegClassMapping', 'MultiScaleFlipAug3D',
     'LoadPointsFromMultiSweeps', 'BackgroundPointsFilter',
