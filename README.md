@@ -261,6 +261,12 @@ Please see [getting_started.md](docs/en/getting_started.md) for the basic usage 
 
 Please refer to [FAQ](docs/en/faq.md) for frequently asked questions. When updating the version of MMDetection3D, please also check the [compatibility doc](docs/en/compatibility.md) to be aware of the BC-breaking updates introduced in each version.
 
+## Build singluarity image
+
+``` 
+apptainer build from_docker_repo.sif docker://ghcr.io/enliden96/mmdetection3d:testbuild
+```
+
 ## Model deployment
 
 Now MMDeploy has supported some MMDetection3D model deployment. Please refer to [model_deployment.md](docs/en/tutorials/model_deployment.md) for more details.
