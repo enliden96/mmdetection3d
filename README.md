@@ -264,7 +264,7 @@ Please refer to [FAQ](docs/en/faq.md) for frequently asked questions. When updat
 ## Build singluarity image
 
 ``` 
-apptainer build from_docker_repo.sif docker://ghcr.io/enliden96/mmdetection3d:testbuild
+apptainer build SINGULARITY_CONTAINER_NAME.sif docker://ghcr.io/enliden96/mmdetection3d:testbuild
 ```
 
 ## Model deployment
