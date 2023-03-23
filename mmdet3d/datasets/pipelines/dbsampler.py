@@ -1,10 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
+import random
 import warnings
 
 import mmcv
 import numpy as np
+import torch
 
 from mmdet3d.core.bbox import box_np_ops
 from mmdet3d.datasets.pipelines import data_augment_utils
@@ -93,6 +95,9 @@ class DataBaseSampler(object):
             Default: None.
         points_loader(dict, optional): Config of points loader. Default:
             dict(type='LoadPointsFromFile', load_dim=4, use_dim=[0,1,2,3])
+        ds_rate (dict: class -> float, optional): Downsample rate, i.e. probability for EACH object sampled to be downsampled. Default: 0.0 for all classes.
+        ds_scale (dict: class -> []float, optional): Downsample scale upper and lower bound to sample from uniformly. The uniformly sampled value is the on that each downsampled objects x- and y-coordinates are multiplied by. Default: [1.0, 1.0] (multiplication of 1.0 means no change compared to actual gt database) for all clases.
+        ds_flip_xy (bool, optional): Whether to multiply x and y coordinates of sampled ground truths by -1 with probability of 0.5 for evening out sampling dsitribution. Default: False.
     """
 
     def __init__(self,
@@ -108,7 +113,10 @@ class DataBaseSampler(object):
                      coord_type='LIDAR',
                      load_dim=4,
                      use_dim=[0, 1, 2, 3]),
-                 file_client_args=dict(backend='disk')):
+                 file_client_args=dict(backend='disk'),
+                 ds_rate={},
+                 ds_scale={},
+                 ds_flip_xy=False):
         super().__init__()
         self.data_root = data_root
         self.info_path = info_path
@@ -117,8 +125,22 @@ class DataBaseSampler(object):
         self.classes = classes
         self.cat2label = {name: i for i, name in enumerate(classes)}
         self.label2cat = {i: name for i, name in enumerate(classes)}
+        # print(points_loader)
         self.points_loader = mmcv.build_from_cfg(points_loader, PIPELINES)
         self.file_client = mmcv.FileClient(**file_client_args)
+        # set rate to 0.0 and scale to 1.0 for classes not in ds_rate and ds_scale
+        for c in classes:
+            if c not in ds_rate:
+                ds_rate[c] = 0.0
+            if c not in ds_scale:
+                ds_scale[c] = [1.0, 1.0]
+        self.ds_rate = ds_rate
+        self.ds_scale = ds_scale
+        self.ds_flip_xy = ds_flip_xy
+        
+        print(self.ds_rate)
+        print(self.ds_scale)
+        print(self.ds_flip_xy)
 
         # load data base infos
         if hasattr(self.file_client, 'get_local_path'):
@@ -160,7 +182,6 @@ class DataBaseSampler(object):
             self.sample_groups.append({name: int(num)})
 
         self.group_db_infos = self.db_infos  # just use db_infos
-
         self.sample_classes = []
         self.sample_max_nums = []
         for group_info in self.sample_groups:
@@ -213,6 +234,23 @@ class DataBaseSampler(object):
                 db_infos[name] = filtered_infos
         return db_infos
 
+    @staticmethod
+    def downsample_gt_sample(pcd, dss):
+        """Translate and downsample ground truth point cloud.
+        
+        Args:
+            pcd: [] (1, c)
+            ds_scale: float for x,y-coordinates multiplication
+        """
+        # pts_kept_factor = 1/(5*ds_scale)
+        num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
+        # [ 4.35836897e-01 -3.67409854e+01  6.95919053e+02]
+        # num_pts_kept = int(pcd.shape[0]*(-1.88322669*1e-2*dss**3 + 2.53214753*1e0*dss**2 - 1.02129840*1e2*dss + 1.23150913*1e3)) # 3rd grade polyfit of pedestrian
+        # num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
+        ind = torch.randperm(pcd.shape[0])[:num_pts_kept]
+        pcd = pcd[ind]
+        return pcd
+
     def sample_all(self, gt_bboxes, gt_labels, img=None, ground_plane=None):
         """Sampling all categories of bboxes.
 
@@ -230,6 +268,7 @@ class DataBaseSampler(object):
                 - points (np.ndarray): sampled points
                 - group_ids (np.ndarray): ids of sampled ground truths
         """
+        
         sampled_num_dict = {}
         sample_num_per_class = []
         for class_name, max_sample_num in zip(self.sample_classes,
@@ -246,13 +285,38 @@ class DataBaseSampler(object):
         sampled = []
         sampled_gt_bboxes = []
         avoid_coll_boxes = gt_bboxes
-
+        ds_tracker = []
+        ds_flip_x_tracker = []
+        ds_flip_y_tracker = []
+        dss = []
+        flip_x = False
+        flip_y = False
         for class_name, sampled_num in zip(self.sample_classes,
                                            sample_num_per_class):
             if sampled_num > 0:
                 sampled_cls = self.sample_class_v2(class_name, sampled_num,
                                                    avoid_coll_boxes)
-
+                for samp in sampled_cls:
+                    if self.ds_flip_xy:
+                        flip_x = random.random() <= .5
+                        flip_y = random.random() <= .5
+                    if flip_x:
+                        samp["box3d_lidar"][0] *= -1
+                        ds_flip_x_tracker += [True]
+                    else:
+                        ds_flip_x_tracker += [False]
+                    if flip_y:
+                        samp["box3d_lidar"][1] *= -1
+                        ds_flip_y_tracker += [True]
+                    else:
+                        ds_flip_y_tracker += [False]
+                    if random.random() <= self.ds_rate[class_name]:
+                        dss += [random.uniform(self.ds_scale[class_name][0], self.ds_scale[class_name][1])]
+                        samp["box3d_lidar"][0:2] *= dss[-1]
+                        ds_tracker += [True]
+                    else:
+                        dss += [1]
+                        ds_tracker += [False]
                 sampled += sampled_cls
                 if len(sampled_cls) > 0:
                     if len(sampled_cls) == 1:
@@ -269,21 +333,24 @@ class DataBaseSampler(object):
         ret = None
         if len(sampled) > 0:
             sampled_gt_bboxes = np.concatenate(sampled_gt_bboxes, axis=0)
-            # center = sampled_gt_bboxes[:, 0:3]
-
-            # num_sampled = len(sampled)
             s_points_list = []
             count = 0
-            for info in sampled:
+            for info, is_ds in zip(sampled, ds_tracker):
                 file_path = os.path.join(
                     self.data_root,
                     info['path']) if self.data_root else info['path']
                 results = dict(pts_filename=file_path)
                 s_points = self.points_loader(results)['points']
+                # print("*************************")
+                # print(info["box3d_lidar"][:3])
+                if is_ds:
+                    s_points = self.downsample_gt_sample(s_points, dss[count])
+                if ds_flip_x_tracker[count]:
+                    s_points.tensor[:, 0] *= -1
+                if ds_flip_y_tracker[count]:
+                    s_points.tensor[:, 1] *= -1
                 s_points.translate(info['box3d_lidar'][:3])
-
                 count += 1
-
                 s_points_list.append(s_points)
 
             gt_labels = np.array([self.cat2label[s['name']] for s in sampled],
@@ -308,8 +375,9 @@ class DataBaseSampler(object):
                 np.arange(gt_bboxes.shape[0],
                           gt_bboxes.shape[0] + len(sampled))
             }
-
+        # print("final count: ", count)
         return ret
+    
 
     def sample_class_v2(self, name, num, gt_bboxes):
         """Sampling specific categories of bounding boxes.
@@ -323,6 +391,7 @@ class DataBaseSampler(object):
             list[dict]: Valid samples after collision test.
         """
         sampled = self.sampler_dict[name].sample(num)
+        # print("sampled: ", sampled)
         sampled = copy.deepcopy(sampled)
         num_gt = gt_bboxes.shape[0]
         num_sampled = len(sampled)
@@ -348,4 +417,5 @@ class DataBaseSampler(object):
                 coll_mat[:, i] = False
             else:
                 valid_samples.append(sampled[i - num_gt])
+        # print("NUMBER OF VALID SAMPLES", len(valid_samples))
         return valid_samples

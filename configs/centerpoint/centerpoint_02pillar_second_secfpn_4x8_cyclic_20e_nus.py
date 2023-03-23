@@ -59,7 +59,32 @@ db_sampler = dict(
         coord_type='LIDAR',
         load_dim=5,
         use_dim=[0, 1, 2, 3, 4],
-        file_client_args=file_client_args))
+        file_client_args=file_client_args),
+    ds_rate=dict(
+        barrier=0.5,
+        bicycle=0.5,
+        bus=0.5,
+        car=0.9,
+        construction_vehicle=0.5,
+        motorcycle=0.5,
+        pedestrian=0.5,
+        traffic_cone=0.5,
+        trailer=0.5,
+        truck= 0.5,
+        ),
+    ds_scale=dict(
+        barrier=[1.3, 1.5],
+        bicycle=[1.4, 1.6],
+        bus=[1.4, 1.6],
+        car=[1.7, 2.2],
+        construction_vehicle=[1.3, 1.8],
+        motorcycle=[1.4, 1.6],
+        pedestrian=[1.5, 2.0],
+        traffic_cone=[1.5, 1.5],
+        trailer=[1.5, 1.5],
+        truck=[1.4, 1.7],
+        )
+    )
 
 train_pipeline = [
     dict(

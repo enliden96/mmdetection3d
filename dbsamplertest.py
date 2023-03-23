@@ -1,5 +1,5 @@
 import random
-from mmdet3d.datasets.pipelines.dbsampler_v2 import DataBaseSampler_v2
+from mmdet3d.datasets.pipelines.dbsampler import DataBaseSampler
 import numpy as np
 import open3d as o3d
 
@@ -41,10 +41,10 @@ DSS = {c: [1.5,1.5] for c in sample_grps.keys()} # set all class DSS to 1 by def
 
 # Set DSR and DSS for specific classes
 DSR["car"] = 1
-DSS["car"] = [1,5]
+DSS["car"] = [1.7,2.3]
 
 flip_xy = True
-dbs_v2 = DataBaseSampler_v2("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=flip_xy)
+dbs_v2 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=flip_xy)
 
 
 
