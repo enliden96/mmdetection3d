@@ -19,9 +19,9 @@ def plot_range_distribution(location_info_per_class_v1, location_info_per_class_
         plt.gca().set_ylabel("number of samples")
         plt.title("DBSampler v2")
         if m1mult:
-            plt.savefig("plots/range1e2/range_dist_%s_DSR%.2f_DSS%.2f-%.2f_flipxy_classSpecificRates.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
+            plt.savefig("plots/range/centerpoint_range_dist_%s_DSR%.2f_DSS%.2f-%.2f_flipxy_classSpecificRates.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         else:
-            plt.savefig("plots/range/range_dist_%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
+            plt.savefig("plots/range/centerpoint_range_dist_%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         plt.clf()
         
         
@@ -86,9 +86,9 @@ def scatter_object_coords(location_info_per_class_v1, location_info_per_class_v2
         plt.gcf().set_size_inches(20,10)
         plt.gca().set_aspect('equal', adjustable='box')
         if m1mult:
-            plt.savefig("./plots/scatter1e2/scatter_%s_DSR%.2f_DSS%.2f-%.2f_flipxy_classSpecificRates.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
+            plt.savefig("./plots/scatter/centerpoint_scatter_%s_DSR%.2f_DSS%.2f-%.2f_flipxy_classSpecificRates.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         else:
-            plt.savefig("./plots/scatter/scatter_%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
+            plt.savefig("./plots/scatter/centerpoint_scatter_%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         plt.clf()
         
 def hist2d_object_coords(location_info_per_class_v1, location_info_per_class_v2, m1mult):
@@ -163,15 +163,15 @@ def hist2d_object_coords(location_info_per_class_v1, location_info_per_class_v2,
         plt.gcf().set_size_inches(20,10)
         plt.gca().set_aspect('equal', adjustable='box')
         if m1mult:
-            plt.savefig("./plots/hist2d1e2/%s_DSR%.2f_DSS%.2f-%.2f_flipxy_classSpecificRates.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
+            plt.savefig("./plots/hist2d/centerpoint_%s_DSR%.2f_DSS%.2f-%.2f_flipxy_classSpecificRates.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         else:
-            plt.savefig("./plots/hist2d/%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
+            plt.savefig("./plots/hist2d/centerpoint_%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         plt.clf()
 
 
 
 prep_v1 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 5, 'truck': 5, 'bus': 5, 'trailer': 5, 'construction_vehicle': 5, 'traffic_cone': 5, 'barrier': 5, 'motorcycle': 5, 'bicycle': 5, 'pedestrian': 5}}
-prep_v2 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 100, 'truck': 200, 'bus': 200, 'trailer': 400, 'construction_vehicle': 100, 'traffic_cone': 5, 'barrier': 15, 'motorcycle': 15, 'bicycle': 15, 'pedestrian': 15}}
+prep_v2 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 100, 'truck': 200, 'bus': 200, 'trailer': 400, 'construction_vehicle': 100, 'traffic_cone': 5, 'barrier': 15, 'motorcycle': 15, 'bicycle': 15, 'pedestrian': 20}}
 sample_grps = {'car': 2, 'truck': 2, 'construction_vehicle': 2, 'bus': 2, 'trailer': 2, 'barrier': 2, 'motorcycle': 2, 'bicycle': 2, 'pedestrian': 2, 'traffic_cone': 2}
 # sample_grps=dict(
         # car=2,
@@ -203,7 +203,32 @@ DSR["construction_vehicle"] = .5
 DSS["construction_vehicle"] = [1.3, 1.8]
 m1mult = True
 
-num_sample_iters = 100
+DSS=dict(
+    barrier=0.5,
+    bicycle=0.5,
+    bus=0.5,
+    car=0.9,
+    construction_vehicle=0.5,
+    motorcycle=0.5,
+    pedestrian=0.5,
+    traffic_cone=0.5,
+    trailer=0.5,
+    truck= 0.5,
+    )
+DSS=dict(
+    barrier=[1.3, 1.5],
+    bicycle=[1.4, 1.6],
+    bus=[1.4, 1.6],
+    car=[1.7, 2.2],
+    construction_vehicle=[1.3, 1.8],
+    motorcycle=[1.4, 1.6],
+    pedestrian=[1.5, 2.0],
+    traffic_cone=[1.5, 1.5],
+    trailer=[1.5, 1.5],
+    truck=[1.4, 1.7],
+    )
+
+num_sample_iters = 100000
 
 dbs_v1 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v1, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'))
 dbs_v2 = DataBaseSampler_v2("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v2, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=m1mult)
@@ -243,7 +268,7 @@ for i in tqdm(range(num_sample_iters)):
 
 # # plot_class_count_bar(class_names, class_count, num_sample_iters)
 
-scatter_object_coords(location_info_per_class_v1, location_info_per_class_v2, m1mult=m1mult) # m1mult same thing as ds_flip_xy
+# scatter_object_coords(location_info_per_class_v1, location_info_per_class_v2, m1mult=m1mult) # m1mult same thing as ds_flip_xy
 
 plot_range_distribution(location_info_per_class_v1, location_info_per_class_v2, m1mult=m1mult) # m1mult same thing as ds_flip_xy
 
