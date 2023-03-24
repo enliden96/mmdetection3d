@@ -32,16 +32,16 @@ db_sampler = dict(
     prepare=dict(
         filter_by_difficulty=[-1],
         filter_by_min_points=dict(
-            car: 100, 
-            truck: 200, 
-            bus: 200, 
-            trailer: 400, 
-            construction_vehicle: 100, 
-            traffic_cone: 5, 
-            barrier: 15, 
-            motorcycle: 15, 
-            bicycle: 15, 
-            pedestrian: 20)),
+            car= 100, 
+            truck= 200, 
+            bus= 200, 
+            trailer= 400, 
+            construction_vehicle= 100, 
+            traffic_cone= 5, 
+            barrier= 15, 
+            motorcycle= 15, 
+            bicycle= 15, 
+            pedestrian= 20)),
     classes=class_names,
     sample_groups=dict(
         car=2,
@@ -83,7 +83,8 @@ db_sampler = dict(
         traffic_cone=[1.5, 1.5],
         trailer=[1.5, 1.5],
         truck=[1.4, 1.7],
-        )
+        ),
+    ds_flip_xy=True
     )
 
 train_pipeline = [
