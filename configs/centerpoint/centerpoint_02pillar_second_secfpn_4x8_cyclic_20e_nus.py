@@ -33,11 +33,11 @@ db_sampler = dict(
         filter_by_difficulty=[-1],
         filter_by_min_points=dict(
             car= 100, 
-            truck= 200, 
-            bus= 200, 
-            trailer= 400, 
+            truck= 50, 
+            bus= 100, 
+            trailer= 100, 
             construction_vehicle= 100, 
-            traffic_cone= 5, 
+            traffic_cone= 10, 
             barrier= 15, 
             motorcycle= 15, 
             bicycle= 15, 
@@ -79,7 +79,7 @@ db_sampler = dict(
         car=[1.7, 2.2],
         construction_vehicle=[1.3, 1.8],
         motorcycle=[1.4, 1.6],
-        pedestrian=[1.5, 2.0],
+        pedestrian=[1.5, 1.8],
         traffic_cone=[1.5, 1.5],
         trailer=[1.5, 1.5],
         truck=[1.4, 1.7],
@@ -193,4 +193,4 @@ data = dict(
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
 
-evaluation = dict(interval=20, pipeline=eval_pipeline)
+evaluation = dict(interval=1, pipeline=eval_pipeline)
