@@ -32,7 +32,7 @@ import open3d as o3d
         
 ###############################################
 
-prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 200, 'truck': 400, 'bus': 400, 'trailer': 400, 'construction_vehicle': 400, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 20}}
+prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 200, 'truck': 400, 'bus': 200, 'trailer': 400, 'construction_vehicle': 5, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 20}}
 sample_grps = {'car': 20, 'truck': 0, 'construction_vehicle': 0, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 0, 'traffic_cone': 0}
 
 DSR = {c: 0.5 for c in sample_grps.keys()}
@@ -42,6 +42,8 @@ DSS = {c: [1.5,1.5] for c in sample_grps.keys()} # set all class DSS to 1 by def
 # Set DSR and DSS for specific classes
 DSR["car"] = 1
 DSS["car"] = [1.7,2.3]
+DSR["construction_vehicle"] = 1
+DSS["construction_vehicle"] = [1.3,1.8]
 
 flip_xy = True
 dbs_v2 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=flip_xy)
@@ -49,13 +51,13 @@ dbs_v2 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/n
 
 
 # gt_bboxes: x,y,z,w,l,h,theta
-sampled = dbs_v2.sample_all(np.array([[5,5,5,.1,.1,.1,0,0,0],[-5,-5,-5,.1,.1,.1,0,0,0]]),np.array([2,2]))
+sampled = dbs_v2.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([2]))
 
 # print("sampled objs:", sampled)
 
 
-
 sampledPts = sampled["points"]
+# sampledGtBboxes = sampled["gt_bboxes"]
 nppcd = sampledPts[:].tensor.numpy()
 # print(nppcd[0])
 # nppcd = downsample_and_move_away(nppcd)
