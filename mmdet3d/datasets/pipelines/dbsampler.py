@@ -11,7 +11,7 @@ import torch
 from mmdet3d.core.bbox import box_np_ops
 from mmdet3d.datasets.pipelines import data_augment_utils
 from ..builder import OBJECTSAMPLERS, PIPELINES
-
+from dgl.geometry import farthest_point_sampler
 
 class BatchSampler:
     """Class for sampling specific category of ground truths.
@@ -240,15 +240,22 @@ class DataBaseSampler(object):
         
         Args:
             pcd: [] (1, c)
-            ds_scale: float for x,y-coordinates multiplication
+            dss: float for x,y-coordinates multiplication of bounding box
         """
-        # pts_kept_factor = 1/(5*ds_scale)
         num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
         # [ 4.35836897e-01 -3.67409854e+01  6.95919053e+02]
         # num_pts_kept = int(pcd.shape[0]*(-1.88322669*1e-2*dss**3 + 2.53214753*1e0*dss**2 - 1.02129840*1e2*dss + 1.23150913*1e3)) # 3rd grade polyfit of pedestrian
         # num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
-        ind = torch.randperm(pcd.shape[0])[:num_pts_kept]
-        pcd = pcd[ind]
+        
+        # Clone tensor to not mess upp with reshape
+        pcdtensor = torch.clone(pcd.tensor)
+        pcdtensor = torch.clone(pcdtensor[:,:3].reshape(1, -1, 3)) # Reshape because dgl farthest_point_sampler expects a batch of point clouds
+        
+        # Generate indices with fps
+        ind = farthest_point_sampler(pcdtensor, num_pts_kept)
+        
+        # Use fps indices to downsample. ind[0] once again required beacuse of batch expectation
+        pcd.tensor = pcd.tensor[ind[0]][:]
         return pcd
 
     def sample_all(self, gt_bboxes, gt_labels, img=None, ground_plane=None):
