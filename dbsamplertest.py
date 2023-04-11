@@ -2,6 +2,24 @@ import random
 from mmdet3d.datasets.pipelines.dbsampler import DataBaseSampler
 import numpy as np
 import open3d as o3d
+from scipy.spatial.transform import Rotation   
+
+
+def get_open3d_bbox(bbox, color=(1,0,0)):
+    print(bbox)
+    bbox = bbox.copy()
+    # bbox[2] = bbox[2] - bbox[5]/2
+    # bbox[3] = bbox[3] - bbox[4]/2
+    # bbox[4] = bbox[4] - bbox[3]/2
+    # bbox[5] = bbox[5] - bbox[2]/2
+    # bbox[6] = bbox[6] - np.pi/2
+    bbox[2] += .9
+    bbox = bbox.tolist()
+    rot = Rotation.from_euler('xyz', [0, 0, bbox[6]], degrees=False).as_matrix()
+    bbox = o3d.geometry.OrientedBoundingBox(bbox[:3], rot, bbox[3:6])
+    bbox.color = color
+    print(bbox)
+    return bbox
 
 # def split_points_into_bboxes(pcd, bboxes):
 #     pts_split = 
@@ -70,9 +88,19 @@ nppcd = np.vstack((nppcd, np.array([1,0,0,1])))
 # print("std intensity: ", np.sqrt(np.var(nppcd[:, 3])))
 
 
+print(sampled["gt_bboxes_3d"])
+
+print(type(sampled["gt_bboxes_3d"][0]))
+
+bbox = get_open3d_bbox(sampled["gt_bboxes_3d"][0])
 
 
 pcd = o3d.geometry.PointCloud()
 pcd.points = o3d.utility.Vector3dVector(nppcd[:, :3])
 pcd.colors = o3d.utility.Vector3dVector(np.hstack((nppcd[:, 3:4]/np.max(nppcd[:, 3]),nppcd[:, 3:4]/np.max(nppcd[:, 3]),nppcd[:, 3:4]/np.max(nppcd[:, 3]))))
-o3d.visualization.draw_geometries([pcd])
+plotdata = []
+plotdata.append(pcd)
+for b in sampled["gt_bboxes_3d"]:
+    plotdata.append(get_open3d_bbox(b))
+o3d.visualization.draw_geometries(plotdata)
+
