@@ -16,10 +16,23 @@ def get_open3d_bbox(bbox, color=(1,0,0)):
     bbox[2] += .9
     bbox = bbox.tolist()
     rot = Rotation.from_euler('xyz', [0, 0, bbox[6]], degrees=False).as_matrix()
+    print(rot)
+    print(bbox[6])
+    cent = bbox[:3]
     bbox = o3d.geometry.OrientedBoundingBox(bbox[:3], rot, bbox[3:6])
     bbox.color = color
+    print(bbox.R)
     print(bbox)
-    return bbox
+    lineset = o3d.geometry.LineSet()
+    print("--------------------------------------")
+    points = [[1, 0, 0], [4, 0, 0]]
+    line_ind = [[0,1]]
+    lineset.points = o3d.utility.Vector3dVector(points)
+    lineset.translate(cent)
+    lineset.rotate(bbox.R, center = cent)  
+    lineset.lines = o3d.utility.Vector2iVector(line_ind)
+    lineset.colors = o3d.utility.Vector3dVector([[0,1,.5]])
+    return bbox, lineset
 
 # def split_points_into_bboxes(pcd, bboxes):
 #     pts_split = 
@@ -50,7 +63,7 @@ def get_open3d_bbox(bbox, color=(1,0,0)):
         
 ###############################################
 
-prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 200, 'truck': 400, 'bus': 200, 'trailer': 400, 'construction_vehicle': 5, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 20}}
+prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 1000, 'truck': 400, 'bus': 200, 'trailer': 400, 'construction_vehicle': 5, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 20}}
 sample_grps = {'car': 20, 'truck': 0, 'construction_vehicle': 0, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 0, 'traffic_cone': 0}
 
 DSR = {c: 0.5 for c in sample_grps.keys()}
@@ -59,7 +72,7 @@ DSS = {c: [1.5,1.5] for c in sample_grps.keys()} # set all class DSS to 1 by def
 
 # Set DSR and DSS for specific classes
 DSR["car"] = 1
-DSS["car"] = [1.7,2.3]
+DSS["car"] = [1.0, 1.0]
 DSR["construction_vehicle"] = 1
 DSS["construction_vehicle"] = [1.3,1.8]
 
@@ -101,6 +114,8 @@ pcd.colors = o3d.utility.Vector3dVector(np.hstack((nppcd[:, 3:4]/np.max(nppcd[:,
 plotdata = []
 plotdata.append(pcd)
 for b in sampled["gt_bboxes_3d"]:
-    plotdata.append(get_open3d_bbox(b))
+    bbox, dir_line = get_open3d_bbox(b)
+    plotdata.append(bbox)
+    plotdata.append(dir_line)
 o3d.visualization.draw_geometries(plotdata)
 
