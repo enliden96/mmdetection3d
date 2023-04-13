@@ -116,7 +116,8 @@ class DataBaseSampler(object):
                  file_client_args=dict(backend='disk'),
                  ds_rate={},
                  ds_scale={},
-                 ds_flip_xy=False):
+                 ds_flip_xy=False,
+                 ds_method='Random'):
         super().__init__()
         self.data_root = data_root
         self.info_path = info_path
@@ -137,6 +138,10 @@ class DataBaseSampler(object):
         self.ds_rate = ds_rate
         self.ds_scale = ds_scale
         self.ds_flip_xy = ds_flip_xy
+        
+        assert ds_method in ['Random', 'FPS'], f"Downsample method '{ds_method}' not supported, only 'Random' and 'FPS' are supported."
+        print(f"Using {ds_method} as downsample method.")
+        self.ds_method = ds_method
         
         print(self.ds_rate)
         print(self.ds_scale)
@@ -235,27 +240,37 @@ class DataBaseSampler(object):
         return db_infos
 
     @staticmethod
-    def downsample_gt_sample(pcd, dss):
+    def downsample_gt_sample(pcd, dss, ds_method):
         """Translate and downsample ground truth point cloud.
         
         Args:
             pcd: [] (1, c)
             dss: float for x,y-coordinates multiplication of bounding box
+            ds_method: str, Type of downsampling applied; 'Random' or 'FPS'
         """
-        num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
-        # [ 4.35836897e-01 -3.67409854e+01  6.95919053e+02]
-        # num_pts_kept = int(pcd.shape[0]*(-1.88322669*1e-2*dss**3 + 2.53214753*1e0*dss**2 - 1.02129840*1e2*dss + 1.23150913*1e3)) # 3rd grade polyfit of pedestrian
-        # num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
-        
-        # Clone tensor to not mess upp with reshape
-        pcdtensor = torch.clone(pcd.tensor)
-        pcdtensor = torch.clone(pcdtensor[:,:3].reshape(1, -1, 3)) # Reshape because dgl farthest_point_sampler expects a batch of point clouds
-        
-        # Generate indices with fps
-        ind = farthest_point_sampler(pcdtensor, num_pts_kept)
-        
-        # Use fps indices to downsample. ind[0] once again required beacuse of batch expectation
-        pcd.tensor = pcd.tensor[ind[0]][:]
+        if ds_method == 'FPS':
+            num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
+            # [ 4.35836897e-01 -3.67409854e+01  6.95919053e+02]
+            # num_pts_kept = int(pcd.shape[0]*(-1.88322669*1e-2*dss**3 + 2.53214753*1e0*dss**2 - 1.02129840*1e2*dss + 1.23150913*1e3)) # 3rd grade polyfit of pedestrian
+            # num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
+            
+            # Clone tensor to not mess upp with reshape
+            pcdtensor = torch.clone(pcd.tensor)
+            pcdtensor = torch.clone(pcdtensor[:,:3].reshape(1, -1, 3)) # Reshape because dgl farthest_point_sampler expects a batch of point clouds
+            
+            # Generate indices with fps
+            ind = farthest_point_sampler(pcdtensor, num_pts_kept)
+            
+            # Use fps indices to downsample. ind[0] once again required beacuse of batch expectation
+            pcd.tensor = pcd.tensor[ind[0]][:]
+            return pcd
+        elif ds_method == 'Random':
+            num_pts_kept = int(pcd.shape[0]//(dss**3)) # Initial value (cubical scaling)
+            # [ 4.35836897e-01 -3.67409854e+01  6.95919053e+02]
+            # num_pts_kept = int(pcd.shape[0]*(-1.88322669*1e-2*dss**3 + 2.53214753*1e0*dss**2 - 1.02129840*1e2*dss + 1.23150913*1e3)) # 3rd grade polyfit of pedestrian
+            # num_pts_kept = int(pcd.shape[0]*(4.35836897*1e-1*dss**2 - 3.67409854*1e1*dss + 6.95919053*1e2)) # 2nd grade polyfit of pedestrian
+            ind = torch.randperm(pcd.shape[0])[:num_pts_kept]
+            pcd = pcd[ind]
         return pcd
 
     def sample_all(self, gt_bboxes, gt_labels, img=None, ground_plane=None):
@@ -367,10 +382,8 @@ class DataBaseSampler(object):
                     info['path']) if self.data_root else info['path']
                 results = dict(pts_filename=file_path)
                 s_points = self.points_loader(results)['points']
-                # print("*************************")
-                # print(info["box3d_lidar"][:3])
                 if is_ds:
-                    s_points = self.downsample_gt_sample(s_points, dss[count])
+                    s_points = self.downsample_gt_sample(s_points, dss[count], self.ds_method)
                 if ds_flip_x_tracker[count]:
                     s_points.tensor[:, 0] *= -1
                 if ds_flip_y_tracker[count]:
@@ -378,7 +391,6 @@ class DataBaseSampler(object):
                 s_points.translate(info['box3d_lidar'][:3])
                 count += 1
                 s_points_list.append(s_points)
-
             gt_labels = np.array([self.cat2label[s['name']] for s in sampled],
                                  dtype=np.long)
 

@@ -37,7 +37,7 @@ import open3d as o3d
         
 ###############################################
 
-prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 100, 'truck': 400, 'bus': 200, 'trailer': 400, 'construction_vehicle': 5, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 20}}
+prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 1000, 'truck': 400, 'bus': 200, 'trailer': 400, 'construction_vehicle': 5, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 1000}}
 sample_grps = {'car': 1, 'truck': 0, 'construction_vehicle': 0, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 0, 'traffic_cone': 0}
 
 DSR = {c: 0.5 for c in sample_grps.keys()}
@@ -46,12 +46,15 @@ DSS = {c: [1.5,1.5] for c in sample_grps.keys()} # set all class DSS to 1 by def
 
 # Set DSR and DSS for specific classes
 DSR["car"] = 1
-DSS["car"] = [1.5,2.0]
+DSS["car"] = [1.0, 1.0]
 DSR["construction_vehicle"] = 1
 DSS["construction_vehicle"] = [1.3,1.8]
+DSR["pedestrian"] = 1
+DSS["pedestrian"] = [3.5,3.5]
 
-flip_xy = True
-dbs_v2 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=flip_xy)
+flip_xy = False
+meth = "Random"
+dbs_v2 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=flip_xy, ds_method=meth)
 
 
 
@@ -84,6 +87,8 @@ pcd.points = o3d.utility.Vector3dVector(nppcd[:, :3])
 # pcd.colors = o3d.utility.Vector3dVector(np.hstack((nppcd[:, 3:4]/np.max(nppcd[:, 3]),nppcd[:, 3:4]/np.max(nppcd[:, 3]),nppcd[:, 3:4]/np.max(nppcd[:, 3]))))
 o3d.visualization.draw_geometries([pcd])
 print(pcd.points)
+
+exit()
 
 
 # print(sampled["points"])
