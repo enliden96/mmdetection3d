@@ -323,19 +323,19 @@ class DataBaseSampler(object):
                             if flip_y:
                                 samp["box3d_lidar"][6] = samp["box3d_lidar"][6] - np.pi
                             else:
-                                samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
+                                samp["box3d_lidar"][6] = np.pi - samp["box3d_lidar"][6]
                         else:
                             if flip_y:
-                                samp["box3d_lidar"][6] = np.pi - samp["box3d_lidar"][6]
+                                samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
                     else:
                         if flip_x:
                             if flip_y:
                                 samp["box3d_lidar"][6] = samp["box3d_lidar"][6] + np.pi
                             else:
-                                samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
+                                samp["box3d_lidar"][6] = - np.pi - samp["box3d_lidar"][6]
                         else:
                             if flip_y:
-                                samp["box3d_lidar"][6] = - np.pi - samp["box3d_lidar"][6]
+                                samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
                 sampled += sampled_cls
                 if len(sampled_cls) > 0:
                     if len(sampled_cls) == 1:
