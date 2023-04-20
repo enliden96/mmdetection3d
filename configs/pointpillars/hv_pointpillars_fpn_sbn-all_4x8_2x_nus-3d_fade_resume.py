@@ -4,4 +4,4 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
-resume_from = '/mimer/NOBACKUP/groups/snic2021-7-127/enliden/databasesamplerv2/mmdetection3d/work_dirs_pp_no_fade/epoch_15.pth'
+resume_from = '/mimer/NOBACKUP/groups/snic2021-7-127/enliden/databasesamplerv2/mmdetection3d/work_dirs_pp_no_fade/epoch_18.pth'
