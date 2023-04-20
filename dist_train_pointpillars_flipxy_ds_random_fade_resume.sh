@@ -12,7 +12,7 @@ module purge
 # Specify the path to the container
 CONTAINER=/mimer/NOBACKUP/groups/snic2021-7-127/enliden/databasesamplerv2/mmdetection3d/singularity/mmdetection3d_with_ds_choice.sif
 DIR=pointpillars
-WORK=work_dirs
+WORK=work_dirs_pp_with_fade
 CONFIG=hv_pointpillars_fpn_sbn-all_4x8_2x_nus-3d_fade_resume
 # Print the PyTorch version then exit
 # singularity exec $CONTAINER python -c "import torch; print(torch.__version__)"
