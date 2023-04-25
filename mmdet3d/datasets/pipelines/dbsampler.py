@@ -118,7 +118,7 @@ class DataBaseSampler(object):
                      use_dim=[0, 1, 2, 3]),
                  file_client_args=dict(backend='disk'),
                  ds_rate={},
-                 ds_scale={},
+                 ds_target_range={},
                  ds_flip_xy=False,
                  ds_method='Random',
                  max_range_class=dict(
@@ -147,10 +147,10 @@ class DataBaseSampler(object):
         for c in classes:
             if c not in ds_rate:
                 ds_rate[c] = 0.0
-            if c not in ds_scale:
-                ds_scale[c] = [1.0, 1.0]
+            if c not in ds_target_range:
+                ds_target_range[c] = [max_range_class[c]*(2/3), max_range_class[c]]
         self.ds_rate = ds_rate
-        self.ds_scale = ds_scale
+        self.ds_target_range = ds_target_range
         self.ds_flip_xy = ds_flip_xy
         self.max_range_class = max_range_class
         
@@ -159,7 +159,7 @@ class DataBaseSampler(object):
         self.ds_method = ds_method
         
         print(self.ds_rate)
-        print(self.ds_scale)
+        print(self.ds_target_range)
         print(self.ds_flip_xy)
 
         # load data base infos
@@ -335,13 +335,28 @@ class DataBaseSampler(object):
                                                    avoid_coll_boxes)
                 for samp in sampled_cls:                    
                     if random.random() <= self.ds_rate[class_name]:
-                        dss += [random.uniform(self.ds_scale[class_name][0], self.ds_scale[class_name][1])]
-                        if samp["num_points_in_gt"]//(dss[-1]**3) > 5 and sqrt(samp["box3d_lidar"][0]**2+samp["box3d_lidar"][1]**2)*dss[-1] < self.max_range_class [class_name]:
-                            samp["box3d_lidar"][0:2] *= dss[-1]
-                            ds_tracker += [True]
+                        # dss += [random.uniform(self.ds_scale[class_name][0], self.ds_scale[class_name][1])]
+                        # if samp["num_points_in_gt"]//(dss[-1]**3) > 5 and sqrt(samp["box3d_lidar"][0]**2+samp["box3d_lidar"][1]**2)*dss[-1] < self.max_range_class [class_name]:
+                        #     samp["box3d_lidar"][0:2] *= dss[-1]
+                        #     ds_tracker += [True]
+                        # else:
+                        #     # print("Downsampled object ends up too far away or has too few points, skipping downsampling")
+                        #     dss[-1] = 1
+                        #     ds_tracker += [False]
+                        bev_dist = sqrt(samp["box3d_lidar"][0]**2+samp["box3d_lidar"][1]**2)
+                        target_dist = random.uniform(self.ds_target_range[class_name][0], self.ds_target_range[class_name][1])
+                        if target_dist > bev_dist:
+                            dss += [target_dist/bev_dist]
+                            if samp["num_points_in_gt"]//(dss[-1]**3) > 5:
+                                samp["box3d_lidar"][0:2] *= dss[-1]
+                                ds_tracker += [True]
+                            else:
+                                # Downsampled object has too few points, skip downsampling
+                                dss[-1] = 1
+                                ds_tracker += [False]
                         else:
-                            # print("Downsampled object ends up too far away or has too few points, skipping downsampling")
-                            dss[-1] = 1
+                            # Target distance is smaller than current distance, skip downsampling
+                            dss += [1]
                             ds_tracker += [False]
                     else:
                         dss += [1]
