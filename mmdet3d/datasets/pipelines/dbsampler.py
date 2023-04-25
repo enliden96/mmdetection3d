@@ -119,6 +119,7 @@ class DataBaseSampler(object):
                  file_client_args=dict(backend='disk'),
                  ds_rate={},
                  ds_target_range={},
+                 long_range_fraction=1/3,
                  ds_flip_xy=False,
                  ds_method='Random',
                  max_range_class=dict(
@@ -131,7 +132,8 @@ class DataBaseSampler(object):
                     barrier= 30, 
                     motorcycle= 40, 
                     bicycle= 40, 
-                    pedestrian= 40),):
+                    pedestrian= 40),
+                 ):
         super().__init__()
         self.data_root = data_root
         self.info_path = info_path
@@ -148,7 +150,7 @@ class DataBaseSampler(object):
             if c not in ds_rate:
                 ds_rate[c] = 0.0
             if c not in ds_target_range:
-                ds_target_range[c] = [max_range_class[c]*(2/3), max_range_class[c]]
+                ds_target_range[c] = [max_range_class[c]*(1-long_range_fraction), max_range_class[c]]
         self.ds_rate = ds_rate
         self.ds_target_range = ds_target_range
         self.ds_flip_xy = ds_flip_xy
@@ -352,10 +354,12 @@ class DataBaseSampler(object):
                                 ds_tracker += [True]
                             else:
                                 # Downsampled object has too few points, skip downsampling
+                                # print("too few points")
                                 dss[-1] = 1
                                 ds_tracker += [False]
                         else:
                             # Target distance is smaller than current distance, skip downsampling
+                            # print("original dist>target dist")
                             dss += [1]
                             ds_tracker += [False]
                     else:
