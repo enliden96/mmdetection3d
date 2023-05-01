@@ -18,8 +18,9 @@ def plot_num_points_vs_range(location_info_per_class_v1, location_info_per_class
     radial_dists["traffic_cone"] = 30
     radial_dists["barrier"] = 30
     
-    for cl in location_info_per_class_v1:
-        if location_info_per_class_v1[cl]["range"] == []:
+    for cl in location_info_per_class_v2:
+        if location_info_per_class_v2[cl]["range"] == []:
+            print("continue")
             continue
         print(len(location_info_per_class_v2[cl]["range"]))
         print(len(location_info_per_class_v2[cl]["num_points"]))
@@ -56,35 +57,37 @@ def plot_num_points_vs_range(location_info_per_class_v1, location_info_per_class
             plt.savefig("plots/num_points_vs_range/num_points_vs_range_%s_DSR%.2f_DSS%.2f-%.2f.png" % (cl, DSR[cl], DSS[cl][0], DSS[cl][1]))
         plt.clf()
 
-prep_v1 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 5, 'truck': 5, 'bus': 5, 'trailer': 5, 'construction_vehicle': 5, 'traffic_cone': 5, 'barrier': 5, 'motorcycle': 5, 'bicycle': 5, 'pedestrian': 5}}
-prep_v2 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 50, 'truck': 200, 'bus': 200, 'trailer': 400, 'construction_vehicle': 100, 'traffic_cone': 5, 'barrier': 15, 'motorcycle': 15, 'bicycle': 15, 'pedestrian': 15}}
-# sample_grps = {'car': 2, 'truck': 2, 'construction_vehicle': 2, 'bus': 2, 'trailer': 2, 'barrier': 2, 'motorcycle': 2, 'bicycle': 2, 'pedestrian': 2, 'traffic_cone': 2}
-sample_grps = {'car': 0, 'truck': 0, 'construction_vehicle': 0, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 1, 'traffic_cone': 0}
+# prep_v1 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 5, 'truck': 5, 'bus': 5, 'trailer': 5, 'construction_vehicle': 5, 'traffic_cone': 5, 'barrier': 5, 'motorcycle': 5, 'bicycle': 5, 'pedestrian': 5}}
+prep_v2 = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 5, 'truck': 5, 'bus': 5, 'trailer': 5, 'construction_vehicle': 5, 'traffic_cone': 5, 'barrier': 5, 'motorcycle': 5, 'bicycle': 5, 'pedestrian': 5}}
+sample_grps = {'car': 1, 'truck': 1, 'construction_vehicle': 1, 'bus': 1, 'trailer': 1, 'barrier': 1, 'motorcycle': 1, 'bicycle': 1, 'pedestrian': 1, 'traffic_cone': 1}
+# sample_grps = {'car': 2, 'truck': 0, 'construction_vehicle': 0, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 0, 'traffic_cone': 0}
 # sample_grps=dict(
-        # car=2,
-        # truck=3,
-        # construction_vehicle=7,
-        # bus=4,
-        # trailer=6,
-        # barrier=2,
-        # motorcycle=6,
-        # bicycle=6,
-        # pedestrian=2,
-        # traffic_cone=2)
+#         car=2,
+#         truck=3,
+#         construction_vehicle=7,
+#         bus=4,
+#         trailer=6,
+#         barrier=2,
+#         motorcycle=6,
+#         bicycle=6,
+#         pedestrian=2,
+#         traffic_cone=2)
 
 
 
 # DSR = .5
 DSR = {c: 0.5 for c in sample_grps.keys()}
 # DSS = 1.5
-DSS = {c: [1.02, 2.5] for c in sample_grps.keys()} # set all class DSS to 1 by default
+DSS = {c: [3.0, 3.0] for c in sample_grps.keys()} # set all class DSS to 1 by default
 
 ### Set DSR and DSS for specific classes
-DSR["pedestrian"] = 1.0
-DSS["pedestrian"] = [1.0, 2.0]
+# DSR["pedestrian"] = 1.0
+# DSS["pedestrian"] = [1.0, 2.0]
+# DSR["car"] = 1.0
+# DSS["car"] = [1.7, 2.2]
 
 m1mult = True
-dbs = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v1, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'))
+dbs = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v2, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=m1mult)
 # dbs_v2 = DataBaseSampler_v2("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v2, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=m1mult)
 
 # gt_bboxes: x,y,z,w,l,h,theta
@@ -97,23 +100,23 @@ location_info_per_class_v2 = {c: {"range": [], "x": [], "y": [], "z": [], "num_p
 
 class_names = ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
 
-num_sample_iters = 10000
+num_sample_iters = 100
 
-for i in tqdm(range(num_sample_iters)):
-    sampled = dbs.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
-    for c, gtbb in zip(sampled["gt_labels_3d"], sampled["gt_bboxes_3d"]):
-        class_count_v1.append(c)
-        location_info_per_class_v1[class_names[c]]["range"].append(np.sqrt(gtbb[0]**2 + gtbb[1]**2 + gtbb[2]**2))
-        location_info_per_class_v1[class_names[c]]["x"].append(gtbb[0])
-        location_info_per_class_v1[class_names[c]]["y"].append(gtbb[1])
-        location_info_per_class_v1[class_names[c]]["z"].append(gtbb[2])
-        location_info_per_class_v1[class_names[c]]["num_points"].append(len(sampled["points"]))
+# for i in tqdm(range(num_sample_iters)):
+#     sampled = dbs.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
+#     for c, gtbb in zip(sampled["gt_labels_3d"], sampled["gt_bboxes_3d"]):
+#         class_count_v1.append(c)
+#         location_info_per_class_v1[class_names[c]]["range"].append(np.sqrt(gtbb[0]**2 + gtbb[1]**2 + gtbb[2]**2))
+#         location_info_per_class_v1[class_names[c]]["x"].append(gtbb[0])
+#         location_info_per_class_v1[class_names[c]]["y"].append(gtbb[1])
+#         location_info_per_class_v1[class_names[c]]["z"].append(gtbb[2])
+#         location_info_per_class_v1[class_names[c]]["num_points"].append(len(sampled["points"]))
 
 for i in tqdm(range(num_sample_iters)):
     sampled = dbs.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
     # Remove samples that contain less than 5 points after downsampling
-    if len(sampled["points"]) < 5:
-        continue
+    # if len(sampled["points"]) < 5:
+    #     continue
     for c, gtbb in zip(sampled["gt_labels_3d"], sampled["gt_bboxes_3d"]):
         class_count_v2.append(c)
         location_info_per_class_v2[class_names[c]]["range"].append(np.sqrt(gtbb[0]**2 + gtbb[1]**2 + gtbb[2]**2))
@@ -125,18 +128,18 @@ for i in tqdm(range(num_sample_iters)):
 
 # # plot_class_count_bar(class_names, class_count, num_sample_iters)
 
-v1polyfitconst, covv1 = np.polyfit(location_info_per_class_v1["pedestrian"]["range"], location_info_per_class_v1["pedestrian"]["num_points"] , 2, cov=True)
-v2polyfitconst, covv2 = np.polyfit(location_info_per_class_v2["pedestrian"]["range"], location_info_per_class_v2["pedestrian"]["num_points"] , 2, cov=True)
+# v1polyfitconst, covv1 = np.polyfit(location_info_per_class_v1["pedestrian"]["range"], location_info_per_class_v1["pedestrian"]["num_points"] , 2, cov=True)
+# v2polyfitconst, covv2 = np.polyfit(location_info_per_class_v2["pedestrian"]["range"], location_info_per_class_v2["pedestrian"]["num_points"] , 2, cov=True)
 
-print(v1polyfitconst)
-print(v2polyfitconst)
+# print(v1polyfitconst)
+# print(v2polyfitconst)
 
 
-x = np.linspace(0, 100, 100)
-plt.plot(x, np.polyval(v1polyfitconst, x), label="v1")
-plt.plot(x, np.polyval(v2polyfitconst, x), label="v2")
-plt.legend()
-plt.show()
+# x = np.linspace(0, 100, 100)
+# plt.plot(x, np.polyval(v1polyfitconst, x), label="v1")
+# plt.plot(x, np.polyval(v2polyfitconst, x), label="v2")
+# plt.legend()
+# plt.show()
 
 plot_num_points_vs_range(location_info_per_class_v1, location_info_per_class_v2, m1mult=m1mult) # m1mult same thing as ds_flip_xy
 
