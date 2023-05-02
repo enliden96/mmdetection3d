@@ -49,9 +49,9 @@ db_sampler = dict(
             construction_vehicle=(33.33,50),
             traffic_cone=(20,30),
             barrier=(20,30),
-            motorcycle=(26,7,40),
-            bicycle=(26,7,40),
-            pedestrian=(26,7,40))),
+            motorcycle=(26.7,40),
+            bicycle=(26.7,40),
+            pedestrian=(26.7,40))),
     classes=class_names,
     sample_groups=dict(
         car=2,
@@ -177,4 +177,4 @@ data = dict(
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
 
-evaluation = dict(interval=20, pipeline=eval_pipeline)
+evaluation = dict(interval=1, pipeline=eval_pipeline)
