@@ -1,5 +1,5 @@
 import random
-from mmdet3d.datasets.pipelines.dbsampler_v2 import DataBaseSampler_v2
+from mmdet3d.datasets.pipelines.dbsampler import DataBaseSampler
 import numpy as np
 import open3d as o3d
 
@@ -32,8 +32,8 @@ import open3d as o3d
         
 ###############################################
 
-prep = {'filter_by_difficulty': [-1], 'filter_by_min_points': {'car': 200, 'truck': 400, 'bus': 400, 'trailer': 400, 'construction_vehicle': 400, 'traffic_cone': 10, 'barrier': 20, 'motorcycle': 20, 'bicycle': 20, 'pedestrian': 20}}
-sample_grps = {'car': 20, 'truck': 0, 'construction_vehicle': 0, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 0, 'traffic_cone': 0}
+prep = {'filter_by_difficulty': [-1],'filter_by_range': {'car': (33,50), 'truck': (33,50), 'bus': (33,50), 'trailer': (33,50), 'construction_vehicle': (33,50), 'traffic_cone': (20,30), 'barrier': (20,30), 'motorcycle': (27,40), 'bicycle': (27,40), 'pedestrian': (27,40)} ,'filter_by_min_points': {'car': 5, 'truck': 5, 'bus': 5, 'trailer': 5, 'construction_vehicle': 5, 'traffic_cone': 5, 'barrier': 5, 'motorcycle': 5, 'bicycle': 5, 'pedestrian': 5}}
+sample_grps = {'car': 0, 'truck': 0, 'construction_vehicle': 7, 'bus': 0, 'trailer': 0, 'barrier': 0, 'motorcycle': 0, 'bicycle': 0, 'pedestrian': 0, 'traffic_cone': 0}
 
 DSR = {c: 0.5 for c in sample_grps.keys()}
 # DSS = 1.5
@@ -44,7 +44,7 @@ DSR["car"] = 1
 DSS["car"] = [1,5]
 
 flip_xy = True
-dbs_v2 = DataBaseSampler_v2("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=flip_xy)
+dbs_v2 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'))
 
 
 

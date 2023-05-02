@@ -11,7 +11,7 @@ import torch
 from mmdet3d.core.bbox import box_np_ops
 from mmdet3d.datasets.pipelines import data_augment_utils
 from ..builder import OBJECTSAMPLERS, PIPELINES
-from dgl.geometry import farthest_point_sampler
+# from dgl.geometry import farthest_point_sampler
 from math import sqrt
 
 class BatchSampler:
@@ -82,7 +82,7 @@ class BatchSampler:
 
 
 @OBJECTSAMPLERS.register_module()
-class DataBaseSampler_v4(object):
+class DataBaseSampler(object):
     """Class for sampling data from the ground truth database.
 
     Args:
@@ -117,21 +117,22 @@ class DataBaseSampler_v4(object):
                      load_dim=4,
                      use_dim=[0, 1, 2, 3]),
                  file_client_args=dict(backend='disk'),
-                 ds_rate={},
-                 ds_target_range={},
-                 ds_flip_xy=False,
-                 ds_method='Random',
-                 max_range_class=dict(
-                    car= 50, 
-                    truck= 50, 
-                    bus= 50, 
-                    trailer= 50, 
-                    construction_vehicle= 50, 
-                    traffic_cone= 30, 
-                    barrier= 30, 
-                    motorcycle= 40, 
-                    bicycle= 40, 
-                    pedestrian= 40),):
+                #  ds_rate={},
+                #  ds_target_range={},
+                #  ds_flip_xy=False,
+                #  ds_method='Random',
+                #  max_range_class=dict(
+                #     car= 50, 
+                #     truck= 50, 
+                #     bus= 50, 
+                #     trailer= 50, 
+                #     construction_vehicle= 50, 
+                #     traffic_cone= 30, 
+                #     barrier= 30, 
+                #     motorcycle= 40, 
+                #     bicycle= 40, 
+                #     pedestrian= 40),
+                    ):
         super().__init__()
         self.data_root = data_root
         self.info_path = info_path
@@ -144,23 +145,23 @@ class DataBaseSampler_v4(object):
         self.points_loader = mmcv.build_from_cfg(points_loader, PIPELINES)
         self.file_client = mmcv.FileClient(**file_client_args)
         # set rate to 0.0 and scale to 1.0 for classes not in ds_rate and ds_scale
-        for c in classes:
-            if c not in ds_rate:
-                ds_rate[c] = 0.0
-            if c not in ds_target_range:
-                ds_target_range[c] = [max_range_class[c]*(2/3), max_range_class[c]]
-        self.ds_rate = ds_rate
-        self.ds_target_range = ds_target_range
-        self.ds_flip_xy = ds_flip_xy
-        self.max_range_class = max_range_class
+        # for c in classes:
+        #     if c not in ds_rate:
+        #         ds_rate[c] = 0.0
+        #     if c not in ds_target_range:
+        #         ds_target_range[c] = [max_range_class[c]*(2/3), max_range_class[c]]
+        # self.ds_rate = ds_rate
+        # self.ds_target_range = ds_target_range
+        # self.ds_flip_xy = ds_flip_xy
+        # self.max_range_class = max_range_class
         
-        assert ds_method in ['Random', 'FPS'], f"Downsample method '{ds_method}' not supported, only 'Random' and 'FPS' are supported."
-        print(f"Using {ds_method} as downsample method.")
-        self.ds_method = ds_method
+        # assert ds_method in ['Random', 'FPS'], f"Downsample method '{ds_method}' not supported, only 'Random' and 'FPS' are supported."
+        # print(f"Using {ds_method} as downsample method.")
+        # self.ds_method = ds_method
         
-        print(self.ds_rate)
-        print(self.ds_target_range)
-        print(self.ds_flip_xy)
+        # print(self.ds_rate)
+        # print(self.ds_target_range)
+        # print(self.ds_flip_xy)
 
         # load data base infos
         if hasattr(self.file_client, 'get_local_path'):
@@ -212,6 +213,33 @@ class DataBaseSampler_v4(object):
         for k, v in self.group_db_infos.items():
             self.sampler_dict[k] = BatchSampler(v, k, shuffle=True)
         # TODO: No group_sampling currently
+
+    @staticmethod
+    def filter_by_range(db_infos,class_ranges):
+        """Filter ground truths by bev range from sensor
+        
+        Args:
+            db_infos (dict): Info of groundtruth database.
+            class_ranges (dict): dict of tuples for min and max range
+            
+        Returns:
+            dict: Info of database after filtering.
+        """
+
+        print("Filtering by ranges: ", class_ranges)
+        
+        for name, cls_range in class_ranges.items():
+            # print(db_infos.keys())
+            filtered_infos = []
+            # print('name: ', name, ' range: ', cls_range)
+            for info in db_infos[name]:
+                obj_range = sqrt(info['box3d_lidar'][0]**2 + info['box3d_lidar'][1]**2)
+                if obj_range < cls_range[1] and obj_range > cls_range[0]:
+                    # print('name: ', name, ' object name: ,', info['name'], ' range: ', cls_range, ' objrange: ', obj_range)
+                    filtered_infos.append(info)
+            db_infos[name] = filtered_infos
+                
+        return db_infos
 
     @staticmethod
     def filter_by_difficulty(db_infos, removed_difficulty):
@@ -274,7 +302,7 @@ class DataBaseSampler_v4(object):
             pcdtensor = torch.clone(pcdtensor[:,:3].reshape(1, -1, 3)) # Reshape because dgl farthest_point_sampler expects a batch of point clouds
             
             # Generate indices with fps
-            ind = farthest_point_sampler(pcdtensor, num_pts_kept)
+            # ind = farthest_point_sampler(pcdtensor, num_pts_kept)
             
             # Use fps indices to downsample. ind[0] once again required beacuse of batch expectation
             pcd.tensor = pcd.tensor[ind[0]][:]
@@ -310,6 +338,7 @@ class DataBaseSampler_v4(object):
         sample_num_per_class = []
         for class_name, max_sample_num in zip(self.sample_classes,
                                               self.sample_max_nums):
+            # print('class_name: ', class_name, 'max_sample_num: ', max_sample_num)
             class_label = self.cat2label[class_name]
             # sampled_num = int(max_sample_num -
             #                   np.sum([n == class_name for n in gt_names]))
@@ -322,20 +351,17 @@ class DataBaseSampler_v4(object):
         sampled = []
         sampled_gt_bboxes = []
         avoid_coll_boxes = gt_bboxes
-        ds_tracker = []
-        ds_flip_x_tracker = []
-        ds_flip_y_tracker = []
-        dss = []
-        flip_x = False
-        flip_y = False
+        # ds_tracker = []
+        # ds_flip_x_tracker = []
+        # ds_flip_y_tracker = []
+        # dss = []
+        # flip_x = False
+        # flip_y = False
         for class_name, sampled_num in zip(self.sample_classes,
                                            sample_num_per_class):
             if sampled_num > 0:
                 sampled_cls = self.sample_class_v2(class_name, sampled_num,
                                                    avoid_coll_boxes)
-                for samp in sampled_cls:                    
-                    bev_dist = sqrt(samp["box3d_lidar"][0]**2+samp["box3d_lidar"][1]**2)
-                    if bev_dist < self.ds_target_range
                 sampled += sampled_cls
                 if len(sampled_cls) > 0:
                     if len(sampled_cls) == 1:
@@ -354,19 +380,16 @@ class DataBaseSampler_v4(object):
             sampled_gt_bboxes = np.concatenate(sampled_gt_bboxes, axis=0)
             s_points_list = []
             count = 0
-            for info, is_ds in zip(sampled, ds_tracker):
+            for info in sampled:
                 file_path = os.path.join(
                     self.data_root,
                     info['path']) if self.data_root else info['path']
                 results = dict(pts_filename=file_path)
                 s_points = self.points_loader(results)['points']
-                if is_ds:
-                    s_points = self.downsample_gt_sample(s_points, dss[count], self.ds_method)
-                if ds_flip_x_tracker[count]:
-                    s_points.tensor[:, 0] *= -1
-                if ds_flip_y_tracker[count]:
-                    s_points.tensor[:, 1] *= -1
                 s_points.translate(info['box3d_lidar'][:3])
+                print(info['name'])
+                print(sqrt(info['box3d_lidar'][0]**2 + info['box3d_lidar'][1]**2))
+                
                 count += 1
                 s_points_list.append(s_points)
             gt_labels = np.array([self.cat2label[s['name']] for s in sampled],
