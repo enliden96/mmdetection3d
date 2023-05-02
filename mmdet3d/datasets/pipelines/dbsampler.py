@@ -387,8 +387,6 @@ class DataBaseSampler(object):
                 results = dict(pts_filename=file_path)
                 s_points = self.points_loader(results)['points']
                 s_points.translate(info['box3d_lidar'][:3])
-                print(info['name'])
-                print(sqrt(info['box3d_lidar'][0]**2 + info['box3d_lidar'][1]**2))
                 
                 count += 1
                 s_points_list.append(s_points)
