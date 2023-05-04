@@ -352,16 +352,51 @@ class DataBaseSampler(object):
         sampled_gt_bboxes = []
         avoid_coll_boxes = gt_bboxes
         # ds_tracker = []
-        # ds_flip_x_tracker = []
-        # ds_flip_y_tracker = []
+        ds_flip_x_tracker = []
+        ds_flip_y_tracker = []
         # dss = []
-        # flip_x = False
-        # flip_y = False
+        flip_x = False
+        flip_y = False
         for class_name, sampled_num in zip(self.sample_classes,
                                            sample_num_per_class):
             if sampled_num > 0:
                 sampled_cls = self.sample_class_v2(class_name, sampled_num,
                                                    avoid_coll_boxes)
+                
+                for samp in sampled_cls:
+                    if self.ds_flip_xy:
+                        flip_x = random.random() <= .5
+                        flip_y = random.random() <= .5
+                    if flip_x:
+                        samp["box3d_lidar"][0] *= -1
+                        ds_flip_x_tracker += [True]
+                    else:
+                        ds_flip_x_tracker += [False]
+                    if flip_y:
+                        samp["box3d_lidar"][1] *= -1
+                        ds_flip_y_tracker += [True]
+                    else:
+                        ds_flip_y_tracker += [False]
+                    # Bounding box rotation
+                    if samp["box3d_lidar"][6] >= 0:
+                        if flip_x:
+                            if flip_y:
+                                samp["box3d_lidar"][6] = samp["box3d_lidar"][6] - np.pi
+                            else:
+                                samp["box3d_lidar"][6] = np.pi - samp["box3d_lidar"][6]
+                        else:
+                            if flip_y:
+                                samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
+                    else:
+                        if flip_x:
+                            if flip_y:
+                                samp["box3d_lidar"][6] = samp["box3d_lidar"][6] + np.pi
+                            else:
+                                samp["box3d_lidar"][6] = - np.pi - samp["box3d_lidar"][6]
+                        else:
+                            if flip_y:
+                                samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
+                                
                 sampled += sampled_cls
                 if len(sampled_cls) > 0:
                     if len(sampled_cls) == 1:
@@ -386,6 +421,11 @@ class DataBaseSampler(object):
                     info['path']) if self.data_root else info['path']
                 results = dict(pts_filename=file_path)
                 s_points = self.points_loader(results)['points']
+                if ds_flip_x_tracker[count]:
+                    s_points.tensor[:, 0] *= -1
+                if ds_flip_y_tracker[count]:
+                    s_points.tensor[:, 1] *= -1
+
                 s_points.translate(info['box3d_lidar'][:3])
                 
                 count += 1
