@@ -119,7 +119,7 @@ class DataBaseSampler(object):
                  file_client_args=dict(backend='disk'),
                 #  ds_rate={},
                 #  ds_target_range={},
-                #  ds_flip_xy=False,
+                 ds_flip_xy=False,
                 #  ds_method='Random',
                 #  max_range_class=dict(
                 #     car= 50, 
@@ -152,7 +152,8 @@ class DataBaseSampler(object):
         #         ds_target_range[c] = [max_range_class[c]*(2/3), max_range_class[c]]
         # self.ds_rate = ds_rate
         # self.ds_target_range = ds_target_range
-        # self.ds_flip_xy = ds_flip_xy
+        self.ds_flip_xy = ds_flip_xy
+        print('flip_xy: ', self.ds_flip_xy)
         # self.max_range_class = max_range_class
         
         # assert ds_method in ['Random', 'FPS'], f"Downsample method '{ds_method}' not supported, only 'Random' and 'FPS' are supported."
@@ -396,7 +397,7 @@ class DataBaseSampler(object):
                         else:
                             if flip_y:
                                 samp["box3d_lidar"][6] = -samp["box3d_lidar"][6]
-                                
+
                 sampled += sampled_cls
                 if len(sampled_cls) > 0:
                     if len(sampled_cls) == 1:

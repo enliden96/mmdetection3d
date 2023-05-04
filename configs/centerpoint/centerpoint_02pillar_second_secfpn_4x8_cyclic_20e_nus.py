@@ -64,6 +64,7 @@ db_sampler = dict(
         bicycle=6,
         pedestrian=2,
         traffic_cone=2),
+    ds_flix_xy=True,
     points_loader=dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
