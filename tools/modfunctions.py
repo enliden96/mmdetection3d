@@ -37,6 +37,28 @@ eval_detection_configs = {
         'min_precision': 0.1,
         'max_boxes_per_sample': 500,
         'mean_ap_weight': 5
+    },
+
+    'cvpr_2019_longrange': {
+        'class_range': {
+            'car': 50,
+            'truck': 50,
+            'bus': 50,
+            'trailer': 50,
+            'construction_vehicle': 50,
+            'pedestrian': 40,
+            'motorcycle': 40,
+            'bicycle': 40,
+            'traffic_cone': 30,
+            'barrier': 30
+          },
+        'dist_fcn': 'center_distance',
+        'dist_ths': [0.5, 1.0, 2.0, 4.0],
+        'dist_th_tp': 2.0,
+        'min_recall': 0.1,
+        'min_precision': 0.1,
+        'max_boxes_per_sample': 500,
+        'mean_ap_weight': 5
     }
 }
 
@@ -51,12 +73,17 @@ def evaluate(gt_boxes,pred_boxes, cfg) -> Tuple[DetectionMetrics, DetectionMetri
         # -----------------------------------
         # Step 1: Accumulate metric data for all classes and distance thresholds.
         # -----------------------------------
-
+        datasaver = {}
         metric_data_list = DetectionMetricDataList()
         for class_name in cfg.class_names:
+            # print('Class: ', class_name)
+            datasaver[class_name] = {}
             for dist_th in cfg.dist_ths:
-                md = accumulate(gt_boxes, pred_boxes, class_name, cfg.dist_fcn_callable, dist_th)
+                # print('Distance: ', dist_th)
+                md, data = accumulate(gt_boxes, pred_boxes, class_name, cfg.dist_fcn_callable, dist_th)
                 metric_data_list.set(class_name, dist_th, md)
+                datasaver[class_name][dist_th] = data
+                
 
         # -----------------------------------
         # Step 2: Calculate metrics from the data.
@@ -81,7 +108,7 @@ def evaluate(gt_boxes,pred_boxes, cfg) -> Tuple[DetectionMetrics, DetectionMetri
 
         metrics.add_runtime(time.time() - start_time)
 
-        return metrics, metric_data_list
+        return metrics, metric_data_list, datasaver
 
 
 def config_factory(configuration_name: str) -> DetectionConfig:
@@ -100,7 +127,7 @@ def config_factory(configuration_name: str) -> DetectionConfig:
 def filter_eval_boxes(nusc: NuScenes,
                       eval_boxes: EvalBoxes,
                       max_dist: Dict[str, float],
-                      longrange: bool = False,
+                      rang: str,
                       verbose: bool = False) -> EvalBoxes:
     """
     Applies filtering to boxes. Distance, bike-racks and points per box.
@@ -126,9 +153,15 @@ def filter_eval_boxes(nusc: NuScenes,
 
         # Filter on distance first.
         total += len(eval_boxes[sample_token])
-        if longrange:
+        if rang == 'long':
             eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
-                                            box.ego_dist < max_dist[box.__getattribute__(class_field)] and box.ego_dist > 2*max_dist[box.__getattribute__(class_field)]/3]
+                                            box.ego_dist < max_dist[box.__getattribute__(class_field)] and box.ego_dist > 2*max_dist[box.__getattribute__(class_field)]/3] # ändra tillbaka
+        elif rang == 'medium':
+            eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
+                                            box.ego_dist < 2*max_dist[box.__getattribute__(class_field)]/3 and box.ego_dist > max_dist[box.__getattribute__(class_field)]/3]
+        elif rang == 'short':
+            eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
+                                            box.ego_dist < max_dist[box.__getattribute__(class_field)]/3]
         else:
             eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
                                             box.ego_dist < max_dist[box.__getattribute__(class_field)]]
