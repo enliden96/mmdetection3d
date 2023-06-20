@@ -118,6 +118,10 @@ work_dirs/
 exps/
 *~
 mmdet3d/.mim
+checkpoints 
+results/*
+runs
+visualization/numtest.py
 
 # Pytorch
 *.pth

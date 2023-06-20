@@ -1,4 +1,4 @@
-from mmdet3d.datasets.pipelines.dbsampler_v2 import DataBaseSampler_v2
+
 from mmdet3d.datasets.pipelines.dbsampler import DataBaseSampler
 import numpy as np
 import matplotlib.pyplot as plt
@@ -84,8 +84,8 @@ DSR["pedestrian"] = 1.0
 DSS["pedestrian"] = [1.0, 2.0]
 
 m1mult = True
-dbs_v1 = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v1, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'))
-dbs_v2 = DataBaseSampler_v2("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v2, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=m1mult)
+dbs = DataBaseSampler("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v1, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'))
+# dbs_v2 = DataBaseSampler_v2("./data/nuscenes/nuscenes_dbinfos_train.pkl", "./data/nuscenes/", 1, prep_v2, sample_grps, sample_grps.keys(), points_loader=dict(type='LoadPointsFromFile', load_dim=5, use_dim=[0,1,2,3], coord_type='LIDAR'), ds_rate=DSR, ds_scale=DSS, ds_flip_xy=m1mult)
 
 # gt_bboxes: x,y,z,w,l,h,theta
 
@@ -100,7 +100,7 @@ class_names = ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrie
 num_sample_iters = 10000
 
 for i in tqdm(range(num_sample_iters)):
-    sampled = dbs_v1.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
+    sampled = dbs.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
     for c, gtbb in zip(sampled["gt_labels_3d"], sampled["gt_bboxes_3d"]):
         class_count_v1.append(c)
         location_info_per_class_v1[class_names[c]]["range"].append(np.sqrt(gtbb[0]**2 + gtbb[1]**2 + gtbb[2]**2))
@@ -110,7 +110,7 @@ for i in tqdm(range(num_sample_iters)):
         location_info_per_class_v1[class_names[c]]["num_points"].append(len(sampled["points"]))
 
 for i in tqdm(range(num_sample_iters)):
-    sampled = dbs_v2.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
+    sampled = dbs.sample_all(np.array([[200,200,200,.1,.1,.1,0,0,0]]),np.array([0]))
     # Remove samples that contain less than 5 points after downsampling
     if len(sampled["points"]) < 5:
         continue

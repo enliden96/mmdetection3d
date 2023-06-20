@@ -85,7 +85,7 @@ db_sampler = dict(
         truck=[1.4, 1.7],
         ),
     ds_flip_xy=True,
-    ds_method='Random',
+    ds_method='FPS',
     )
 
 train_pipeline = [

@@ -243,7 +243,8 @@ def main():
             mmcv.dump(outputs, args.out)
         kwargs = {} if args.eval_options is None else args.eval_options
         if args.format_only:
-            dataset.format_results(outputs, **kwargs)
+            # dataset.format_results(outputs, **kwargs) # Original
+            print(dataset.evaluate(outputs, **kwargs))  # Changed to recieve output
         if args.eval:
             eval_kwargs = cfg.get('evaluation', {}).copy()
             # hard-code way to remove EvalHook args

@@ -1,4 +1,4 @@
-from mmdet3d.datasets.pipelines.dbsampler_v2 import DataBaseSampler_v2
+
 from mmdet3d.datasets.pipelines.dbsampler import DataBaseSampler
 import numpy as np
 import matplotlib.pyplot as plt
